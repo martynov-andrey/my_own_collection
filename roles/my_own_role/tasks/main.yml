@@ -1,0 +1,11 @@
+---
+# tasks file for my_own_role
+- name: Create file
+  my_own_namespace.my_own_collection.my_own_module:
+    path: "{{ path }}"
+    content: "{{ content }}"
+  register: testout
+
+- name: dump test output
+  debug:
+    msg: '{{ testout }}'
