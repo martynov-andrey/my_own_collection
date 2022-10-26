@@ -69,16 +69,31 @@ message:
     sample: 'goodbye'
 '''
 
-from os import stat
+#from os import stat
+import os
+import filecmp
 from ansible.module_utils.basic import AnsibleModule
 
-def file_exist(path):
-    '''Check that file already exist'''
+##def file_exist(path):
+##    '''Check that file already exist'''
+##    try:
+##        os.stat(path)
+##    except OSError:
+##        return False
+##    return True
+    
+def file_match(path, content):
     try:
-        stat(path)
+        with open("/tmp/tmp_file.txt", "w") as tmp_file:
+            tmp_file.write(content)
+        if filecmp.cmp("/tmp/tmp_file.txt", path, shallow=False):
+            return True
+        else:
+            return False
+    except OSError:
         return False
-    except Exception:
-        return True
+    except FileNotFoundError:
+        return False
 
 def run_module():
     # define available arguments/parameters a user can pass to the module
@@ -110,21 +125,25 @@ def run_module():
     # if the user is working with this module in only check mode we do not
     # want to make any changes to the environment, just return the current
     # state with no modifications
-    if module.check_mode:
-        result['changed'] = file_exist(module.params['path'])
-        module.exit_json(**result)
+    #if module.check_mode:
+    #    result['changed'] = 
+    #    module.exit_json(**result)
 
     # manipulate or modify the state as needed (this is going to be the
     # part where your module will do what it needs to do)
-    if file_exist(module.params['path']):
-      with open(module.params['path'], 'w') as new_file:
-          new_file.write(module.params["content"])
-      result['changed'] = True
-      result['original_message'] = 'File {path} succesfully created'.format(path = module.params['path'])
-      result['message'] = 'file created'
+    #if file_exist(module.params['path']):
+    #  with open(module.params['path'], 'w') as new_file:
+    #      new_file.write(module.params["content"])
+    if file_match(module.params['path'], module.params['content']):
+        result['original_message'] = 'File {path} already exist'.format(path = module.params['path'])
+        result['message'] = 'File already exist'
+        result['changed'] = False
     else:
-      result['original_message'] = 'File {path} already exist'.format(path = module.params['path'])
-      result['message'] = 'File already exist'  
+        with open(module.params['path'], "w") as path_file:
+            path_file.write(module.params['content'])
+        result['changed'] = True
+        result['original_message'] = 'File {path} succesfully created'.format(path = module.params['path'])
+        result['message'] = 'file created'
 
     # in the event of a successful module execution, you will want to
     # simple AnsibleModule.exit_json(), passing the key/value results
